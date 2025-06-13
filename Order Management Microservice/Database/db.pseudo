@@ -1,0 +1,31 @@
+FUNCTION InitializeDbPool(dbConfig):
+    RETURN CREATE_CONNECTION_POOL(dbConfig)
+
+FUNCTION MigrateDatabase(pool, targetVersion):
+    EXECUTE_WITH_RETRY(MAX_RETRIES, FUNCTION(conn):
+        current ← GET_SCHEMA_VERSION(conn) OR 0
+        FOR version IN current + 1 TO targetVersion:
+            START TRANSACTION
+            ApplyMigration(conn, version)
+            COMMIT
+    )
+
+
+FUNCTION ExecuteWithRetry(maxAttempts, workFunc):
+    FOR attempt FROM 1 TO maxAttempts:
+        TRY
+            conn ← pool.GET_CONNECTION()
+            workFunc(conn)
+            RETURN
+        CATCH TransientError AS err:
+            IF attempt == maxAttempts THEN RAISE err
+            WAIT exponential_backoff(attempt)
+
+            
+FUNCTION ApplyMigration(conn, version):
+    sql ← READ_FILE("migration_" + version + ".sql")
+    conn.EXECUTE(sql)
+    conn.EXECUTE(
+        "INSERT INTO schema_versions(version, applied_on) VALUES(?, NOW())",
+        version
+    )

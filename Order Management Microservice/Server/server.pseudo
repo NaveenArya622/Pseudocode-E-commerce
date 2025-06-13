@@ -1,0 +1,5 @@
+FUNCTION SetupServer(routes):
+    server ← NEW_SERVER()
+    FOR route IN routes:
+        server.ADD_ROUTE(route.path, route.handler)
+    RETURN server

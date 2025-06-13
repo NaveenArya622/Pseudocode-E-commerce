@@ -1,0 +1,14 @@
+function main:
+    try:
+        server = server.SetupRoutes()
+        database.ConnectAndMigrate(host,port, dbName, user,password)
+        server.run()
+    catch(database_error):
+        printf("unable to connect database for error: %s":database_error)
+    catch(server_error):
+        printf("unable to setup server for error: %s":server_error)
+    catch(error):
+        printf("unable to start server for error: %s":error)
+    finally:
+        database.ShutdownDatabase()
+        server.Shutdown(shutDownTimeOut)

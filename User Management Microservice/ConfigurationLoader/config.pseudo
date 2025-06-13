@@ -1,0 +1,5 @@
+FUNCTION LoadConfig():
+    RETURN {
+        db: { host, port, user, password, dbName, targetVersion },
+        server: { routes, shutdownTimeout }
+    }
