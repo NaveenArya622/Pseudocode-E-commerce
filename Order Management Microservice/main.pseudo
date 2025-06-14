@@ -14,7 +14,7 @@ PROCESS MAIN
 
     // --- STEP 2: Setup and start the web server ---
     TRY
-        server ← SETUP_SERVER(routes=config.server.routes)
+        server ← SETUP_SERVER()
         server.RUN()
     CATCH ServerError AS srvErr
         PRINT "ERROR: Server failed to start –", srvErr.message

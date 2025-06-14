@@ -1,5 +1,78 @@
-FUNCTION SetupServer(routes):
+FUNCTION SetupServer():
     server ← NEW_SERVER()
-    FOR route IN routes:
-        server.ADD_ROUTE(route.path, route.handler)
+
+
+
+     // Define routes with types
+    routes ← [
+        ApiRoute(
+            method = "GET",
+            path = "v1/product",
+            handler = handler.GetProducts,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = {
+                products: PRODUCT[]
+            }
+        ),
+        ApiRoute(
+            method = "GET",
+            path = "v1/product/{product_id}",
+            handler = handler.GetProductItem,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = { 
+                productId: STRING,
+                product: PRODUCT
+            }
+        ),
+        ApiRoute(
+            method = "POST",
+            path = "v1/product",
+            handler = handler.AddProduct,
+            middlewares = [Middleware.AuthenticateUser],
+            requestSchema = {
+                product: PRODUCT,
+            },
+            responseSchema = {
+                productId: STRING,
+                message: STRING
+            }
+        ),
+        ApiRoute(
+            method = "PUT",
+            path = "v1/product/{product_id}",
+            handler = handler.UpdateProduct,
+            middlewares = [Middleware.AuthenticateUser],
+            requestSchema = {
+                product: PRODUCT,
+            },
+            responseSchema = {
+                productId: STRING,
+                message: STRING
+            }
+        ),
+        ApiRoute(
+            method = "DELETE",
+            path = "v1/product/{product_id}",
+            handler = handler.DeleteProduct,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = {
+                productId: STRING,
+                message: STRING
+            }
+        ),
+        ApiRoute(
+            method = "GET",
+            path = "v1/product/search?q={query}",
+            handler = handler.GetFilteredProducts,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = {
+                products: PRODUCT[]
+            }
+        )
+    ]
+
+    // Register all routes
+    FOR EACH route IN routes:
+        server.ADD_ROUTE(route.method, route.path, route.middlewares, route.handler)
+
     RETURN server

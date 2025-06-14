@@ -1,14 +1,30 @@
-function main:
-    try:
-        server = server.SetupRoutes()
-        database.ConnectAndMigrate(host,port, dbName, user,password)
-        server.run()
-    catch(database_error):
-        printf("unable to connect database for error: %s":database_error)
-    catch(server_error):
-        printf("unable to setup server for error: %s":server_error)
-    catch(error):
-        printf("unable to start server for error: %s":error)
-    finally:
-        database.ShutdownDatabase()
-        server.Shutdown(shutDownTimeOut)
+PROCESS MAIN
+    SET config ← LoadConfig()
+
+    // --- STEP 1: Initialize and migrate database ---
+    TRY
+        dbPool ← INITIALIZE_DB_POOL(config.db)
+        MIGRATE_DATABASE(
+            pool=dbPool,
+            targetVersion=config.db.targetVersion
+        )
+    CATCH DatabaseError AS dbErr
+        PRINT "ERROR: Cannot initialize or migrate DB –", dbErr.message
+        EXIT FAILURE
+
+    // --- STEP 2: Setup and start the web server ---
+    TRY
+        server ← SETUP_SERVER()
+        server.RUN()
+    CATCH ServerError AS srvErr
+        PRINT "ERROR: Server failed to start –", srvErr.message
+        SHUTDOWN_DB(pool=dbPool)
+        EXIT FAILURE
+
+    // --- STEP 3: Graceful shutdown on termination ---
+    FINALLY
+        PRINT "INFO: Shutdown initiated"
+        server.SHUTDOWN(timeout=config.server.shutdownTimeout)
+        SHUTDOWN_DB(pool=dbPool)
+        PRINT "INFO: Shutdown complete"
+END PROCESS

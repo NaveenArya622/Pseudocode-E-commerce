@@ -1,5 +1,81 @@
-FUNCTION SetupServer(routes):
+FUNCTION SetupServer():
     server ← NEW_SERVER()
-    FOR route IN routes:
-        server.ADD_ROUTE(route.path, route.handler)
+
+
+
+     // Define routes with types
+    routes ← [
+        ApiRoute(
+            method = "POST",
+            path = "v1/user/register",
+            handler = handler.Register,
+            middlewares = [Middleware.ValidateRegisterInput],
+            requestSchema = {
+                username: STRING,
+                email: STRING,
+                gender: "Male"|"Female",
+                password: STRING
+            },
+            responseSchema = {
+                userId: STRING,
+                message: STRING
+            }
+        ),
+        ApiRoute(
+            method = "POST",
+            path = "v1/user/login",
+            handler = handler.Login,
+            middlewares = [Middleware.ValidateLoginInput],
+            requestSchema = {
+                email: STRING,
+                password: STRING
+            },
+            responseSchema = {
+                token: STRING,
+                expiresIn: INTEGER
+            }
+        ),
+        ApiRoute(
+            method = "GET",
+            path = "v1/user/profile",
+            handler = handler.Profile,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = {
+                userId: STRING,
+                username: STRING,
+                gender: "Male"|"Female",
+                email: STRING
+            }
+        ),
+        ApiRoute(
+            method = "PUT",
+            path = "v1/user/{user_id}",
+            handler = handler.UpdateProfile,
+            middlewares = [Middleware.AuthenticateUser],
+            requestSchema = {
+                username: STRING,
+                gender: "Male"|"Female",
+                email: STRING
+            },
+            responseSchema = {
+                userId: STRING,
+                message: STRING
+            }
+        )
+        ApiRoute(
+            method = "POST",
+            path = "v1/user/logout",
+            handler = handler.UpdateProfile,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = {
+                userId: STRING,
+                message: STRING
+            }
+        )
+    ]
+
+    // Register all routes
+    FOR EACH route IN routes:
+        server.ADD_ROUTE(route.method, route.path, route.middlewares, route.handler)
+
     RETURN server

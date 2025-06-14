@@ -29,3 +29,41 @@ FUNCTION ApplyMigration(conn, version):
         "INSERT INTO schema_versions(version, applied_on) VALUES(?, NOW())",
         version
     )
+
+
+FUNCTION SHUTDOWN_DB(pool):
+    PRINT "INFO: Initiating DB pool shutdown..."
+
+    TRY
+        // 1. Stop new acquisitions
+        pool.disable_new_requests = TRUE
+
+        // 2. Gracefully close idle connections
+        FOR EACH conn IN pool.idle_connections:
+            TRY:
+                conn.CLOSE()
+            CATCH Exception AS e:
+                PRINT "WARN: failed to close idle conn –", e.message
+
+        // 3. Wait for active connections to finish or timeout
+        start_time ← NOW()
+        WHILE pool.active_connections > 0 AND
+              (NOW() - start_time) < pool.shutdown_timeout:
+            SLEEP(pool.check_interval)
+
+        // 4. Force-close any remaining active connections
+        IF pool.active_connections > 0:
+            PRINT "WARN: force-closing active connections:", pool.active_connections
+            FOR EACH conn IN pool.active_connections_list:
+                TRY:
+                    conn.CLOSE()
+                CATCH:
+                    // ignore further errors
+
+        // 5. Finally, clean up pool structures
+        pool.CLOSE_INTERNAL_RESOURCES()
+        PRINT "INFO: DB pool shutdown complete."
+
+    CATCH Exception AS err:
+        PRINT "ERROR: unexpected error during DB shutdown –", err.message
+    END TRY

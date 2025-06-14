@@ -1,5 +1,54 @@
-FUNCTION SetupServer(routes):
+FUNCTION SetupServer():
     server ← NEW_SERVER()
-    FOR route IN routes:
-        server.ADD_ROUTE(route.path, route.handler)
+
+
+
+     // Define routes with types
+    routes ← [
+        ApiRoute(
+            method = "POST",
+            path = "v1/payment",
+            handler = handler.ProcessPayment,
+            middlewares = [Middleware.AuthenticateUser],
+            requestSchema = {
+                orderId: STRING,
+                paymentType: STRING,
+                upiId: STRING
+            },
+            responseSchema = {
+                paymentId: STRING,
+                message: STRING
+            }
+        ),
+        ApiRoute(
+            method = "GET",
+            path = "v1/payment/{payment_id}",
+            handler = handler.VerifyPayment,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = { 
+                paymentStatus: STRING,
+                message: STRING
+            }
+        ),
+        ApiRoute(
+            method = "POST",
+            path = "v1/payment/refund",
+            handler = handler.RefundPayment,
+            middlewares = [Middleware.AuthenticateUser],
+            requestSchema = {
+                orderId: STRING,
+                paymentType: STRING,
+                upiId: STRING
+            },
+            responseSchema = {
+                paymentId: STRING,
+                message: STRING
+            }
+        )
+    ]
+
+    // Register all routes
+    FOR EACH route IN routes:
+        server.ADD_ROUTE(route.method, route.path, route.middlewares, route.handler)
+
     RETURN server
