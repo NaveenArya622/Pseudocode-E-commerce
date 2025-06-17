@@ -1,0 +1,29 @@
+FUNCTION Handler.GetFilteredProducts(request, response):
+
+    // Step 1: Extract API ID and query filters from request
+    apiId ← request.ctx["apiId"]
+    filters ← request.queryParams
+
+    // Step 2: Validate and normalize filters
+    IF filters IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid filters")
+
+    usableFilter ← Helper.ImproveFilterState(filters)
+
+    // Step 3: Generate a new API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Fetch products by filters
+    products ← Helper.GetProductsByFilters(usableFilter)
+
+    // Step 5: Handle case where no products found
+    IF products IS NULL OR EMPTY THEN
+        LOG_WARNING("No products found | filters: %s | apiId: %s", filters, apiId)
+        RETURN response.Error(404, "No products found matching the filters")
+
+    // Step 6: Return product list
+    RETURN response.JSON(200, {
+        message: "Products fetched successfully",
+        products: products
+    })

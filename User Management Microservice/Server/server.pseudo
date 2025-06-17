@@ -7,9 +7,9 @@ FUNCTION SetupServer():
     routes ← [
         ApiRoute(
             method = "POST",
-            path = "v1/user/register",
-            handler = handler.Register,
-            middlewares = [Middleware.ValidateRegisterInput],
+            path = "api/UMM/user/register",
+            handler = Handler.Register,
+            middlewares = [],
             requestSchema = {
                 username: STRING,
                 email: STRING,
@@ -18,26 +18,30 @@ FUNCTION SetupServer():
             },
             responseSchema = {
                 userId: STRING,
-                message: STRING
+                message: STRING,
+                token: STRING,
+                expiresIn: INTEGER
             }
         ),
         ApiRoute(
             method = "POST",
-            path = "v1/user/login",
-            handler = handler.Login,
-            middlewares = [Middleware.ValidateLoginInput],
+            path = "api/UMM/user/login",
+            handler = Handler.Login,
+            middlewares = [],
             requestSchema = {
                 email: STRING,
                 password: STRING
             },
             responseSchema = {
+                userId: STRING,
+                message: STRING,
                 token: STRING,
                 expiresIn: INTEGER
             }
         ),
         ApiRoute(
             method = "GET",
-            path = "v1/user/profile",
+            path = "api/UMM/user/profile",
             handler = handler.Profile,
             middlewares = [Middleware.AuthenticateUser],
             responseSchema = {
@@ -49,7 +53,7 @@ FUNCTION SetupServer():
         ),
         ApiRoute(
             method = "PUT",
-            path = "v1/user/{user_id}",
+            path = "api/UMM/user/{user_id}",
             handler = handler.UpdateProfile,
             middlewares = [Middleware.AuthenticateUser],
             requestSchema = {
@@ -64,8 +68,8 @@ FUNCTION SetupServer():
         )
         ApiRoute(
             method = "POST",
-            path = "v1/user/logout",
-            handler = handler.UpdateProfile,
+            path = "api/UMM/user/logout",
+            handler = handler.LogoutUser,
             middlewares = [Middleware.AuthenticateUser],
             responseSchema = {
                 userId: STRING,

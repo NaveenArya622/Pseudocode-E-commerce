@@ -1,0 +1,51 @@
+FUNCTION handler.ProcessPayment(request, response):
+
+    // Step 1: Extract required data from the request
+    user     ← request.ctx.user
+    apiId    ← request.ctx["apiId"]
+    orderId  ← request.urlParams["orderId"]
+    token    ← request.headers["Authorization"]
+    upiId    ← request.body["upiId"]
+
+    // Step 2: Validate inputs
+    IF orderId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid order ID")
+
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing authorization token")
+
+    IF upiId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing UPI ID")
+
+    // Step 3: Ensure API ID exists
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Fetch order details
+    orderDetails ← CallAPI(
+        method = "GET",
+        url = "api/OMM/order/" + orderId,
+        headers = {
+            "apiId": apiId,
+            "Authorization": token
+        }
+    )
+
+    IF orderDetails IS NULL THEN
+        LOG_ERROR("Order not found | orderId: %s | apiId: %s | user: %s", orderId, apiId, user.id)
+        RETURN response.Error(404, "Order not found")
+
+    // Step 5: Request payment
+    paymentId ← Helper.RequestPayment(upiId, orderDetails)
+
+    IF paymentId IS NULL THEN
+        LOG_ERROR("Payment failed | invalid upiId: %s | apiId: %s | user: %s", upiId, apiId, user.id)
+        RETURN response.Error(402, "Invalid UPI ID or payment failed")
+
+    // Step 6: Return successful response
+    RETURN response.JSON(200, {
+        message: "Payment initiated successfully",
+        orderId: orderId,
+        paymentId: paymentId,
+        userId: user.id
+    })

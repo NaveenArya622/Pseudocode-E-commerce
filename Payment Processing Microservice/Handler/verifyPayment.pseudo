@@ -1,0 +1,48 @@
+FUNCTION Handler.VerifyPayment(request, response):
+
+    // Step 1: Extract necessary data from request
+    user       ← request.ctx.user
+    apiId      ← request.ctx["apiId"]
+    token      ← request.headers["Authorization"]
+    paymentId  ← request.urlParams["payment_id"]
+
+    // Step 2: Validate inputs
+    IF paymentId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid payment ID")
+
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing authorization token")
+
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 3: Verify payment status
+    paymentDetails ← Helper.VerifyPayment(paymentId)
+
+    IF paymentDetails IS NULL OR paymentDetails.status ≠ "Success" THEN
+        LOG_ERROR("Payment not successful or pending | paymentId: %s", paymentId)
+        RETURN response.Error(402, "Payment not completed")
+
+    // Step 4: Update order status to "Dispatch"
+    updateResponse ← CallAPI(
+        method = "POST",
+        url = "api/OMM/order/" + paymentDetails.orderId + "/status",
+        headers = {
+            "apiId": apiId,
+            "Authorization": token
+        },
+        body = {
+            "paymentDetails": paymentDetails,
+            "orderStatus": "Dispatch"
+        }
+    )
+
+    IF updateResponse IS NULL THEN
+        LOG_ERROR("Failed to update order status | orderId: %s | userId: %s", paymentDetails.orderId, user.id)
+        RETURN response.Error(500, "Failed to place order")
+
+    // Step 5: Return success response
+    RETURN response.JSON(200, {
+        message: "Order placed successfully",
+        orderId: paymentDetails.orderId
+    })

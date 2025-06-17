@@ -6,56 +6,52 @@ FUNCTION SetupServer():
      // Define routes with types
     routes ← [
         ApiRoute(
-            method = "GET",
-            path = "v1/cart/{user_id}",
-            handler = handler.CartInformation,
+            method = "POST",
+            path = "api/SCM/cart/{user_id}/item/{item_id}",
+            handler = handler.AddToCart,
             middlewares = [Middleware.AuthenticateUser],
             responseSchema = {
-                cartId: STRING,
-                items: {
-                    userId: STRING,
-                    itemId: STRING,
-                }[]
-            }
-        ),
-        ApiRoute(
-            method = "GET",
-            path = "v1/cart/{user_id}/items",
-            handler = handler.GetItems,
-            middlewares = [Middleware.AuthenticateUser],
-            responseSchema = { 
                 cartId: STRING,
                 items: ITEM[]
             }
         ),
         ApiRoute(
             method = "GET",
-            path = "v1/cart/{user_id}/items/{item_id}",
+            path = "api/SCM/cart/{user_id}",
+            handler = handler.CartInformation,
+            middlewares = [Middleware.AuthenticateUser],
+            responseSchema = {
+                message: STRING,
+                items: ITEM[]
+            }
+        ),
+        ApiRoute(
+            method = "GET",
+            path = "api/SCM/cart/{user_id}/items/{item_id}",
             handler = handler.GetItem,
             middlewares = [Middleware.AuthenticateUser],
             responseSchema = { 
-                cartId: STRING,
+                message: STRING,
                 item: ITEM
             }
         ),
         ApiRoute(
             method = "DELETE",
-            path = "v1/cart/{user_id}/items/{item_id}",
+            path = "api/SCM/cart/{user_id}/items/{item_id}",
             handler = handler.DeleteItem,
             middlewares = [Middleware.AuthenticateUser],
-            responseSchema = { 
-                cartId: STRING,
+            responseSchema = {
                 itemId: STRING,
                 message: STRING
             }
         ),
         ApiRoute(
             method = "POST",
-            path = "v1/cart/{user_id}/checkout",
+            path = "api/SCM/cart/{user_id}/checkout",
             handler = handler.CheckoutItems,
             middlewares = [Middleware.AuthenticateUser],
             responseSchema = { 
-                cartId: STRING,
+                itemIds: STRING[],
                 message: STRING
             }
         )

@@ -1,0 +1,22 @@
+FUNCTION Handler.GetProducts(request, response):
+
+    // Step 1: Extract API ID from request context
+    apiId ← request.ctx["apiId"]
+
+    // Step 2: Generate a new API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 3: Fetch products using the helper
+    products ← Helper.GetProducts()
+
+    // Step 4: Handle error if no products found
+    IF products IS NULL OR EMPTY THEN
+        LOG_ERROR("Products not found | apiId: %s", apiId)
+        RETURN response.Error(404, "No products found")
+
+    // Step 5: Return the product list in response
+    RETURN response.JSON(200, {
+        message: "Products fetched successfully",
+        products: products
+    })

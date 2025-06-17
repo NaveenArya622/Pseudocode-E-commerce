@@ -1,0 +1,25 @@
+FUNCTION Handler.RefundPayment(request, response):
+
+    // Step 1: Extract user, API ID, order ID, UPI ID, and token from request
+    user     ← request.ctx.user
+    apiId    ← request.ctx["apiId"]
+    token    ← request.headers["Authorization"]
+    orderId  ← request.body["orderId"]
+    upiId    ← request.body["upiId"]
+
+    // Step 2: Validate required fields
+    IF orderId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid order ID")
+
+    IF upiId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing UPI ID")
+
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing authorization token")
+
+    // Step 3: Generate API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Initiate refund using helper function
+    paymentDetails ← Helpe

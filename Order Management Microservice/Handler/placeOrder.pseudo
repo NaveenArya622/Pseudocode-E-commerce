@@ -1,0 +1,30 @@
+FUNCTION Handler.PlaceOrder(request, response):
+
+    // Step 1: Extract necessary data from request
+    user ← request.ctx.user
+    apiId ← request.ctx["apiId"]
+    orderDetails ← request.body["orderDetails"]
+
+    // Step 2: Validate and assign identifiers
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    IF orderDetails.id IS NULL OR EMPTY THEN
+        orderDetails.id ← GenerateUUID()
+
+    // Step 3: Enrich order details
+    orderDetails.userId ← user.id
+    orderDetails.apiId ← apiId
+
+    // Step 4: Attempt to place order in database
+    orderId ← Helper.PlaceOrder(orderDetails)
+
+    IF orderId IS NULL THEN
+        LOG_ERROR("Failed to place order for | userId: %s | apiId: %s", userId, apiId)
+        RETURN response.Error(500, "Failed to place order")
+
+    // Step 5: Return success response
+    RETURN response.JSON(200, {
+        message: "Order placed successfully",
+        orderId: orderId
+    })

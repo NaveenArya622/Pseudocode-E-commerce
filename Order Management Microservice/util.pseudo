@@ -1,0 +1,16 @@
+FUNCTION CallAPI(method, url, headers = {}, body = NULL):
+    request ← NewHTTPRequest()
+    request.method ← method
+    request.url ← url
+    request.headers ← headers
+
+    IF body IS NOT NULL THEN
+        request.body ← SerializeToJSON(body)
+
+    response ← SendRequest(request)
+
+    IF response.status == 200 THEN
+        data ← ParseJSON(response.body)
+        RETURN Success(data)
+    ELSE
+        RETURN Error("API call failed", response.status, response.body)

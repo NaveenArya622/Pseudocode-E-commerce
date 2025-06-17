@@ -7,8 +7,8 @@ FUNCTION SetupServer():
     routes ← [
         ApiRoute(
             method = "POST",
-            path = "v1/payment",
-            handler = handler.ProcessPayment,
+            path = "api/PPM/payment",
+            handler = Handler.ProcessPayment,
             middlewares = [Middleware.AuthenticateUser],
             requestSchema = {
                 orderId: STRING,
@@ -22,8 +22,8 @@ FUNCTION SetupServer():
         ),
         ApiRoute(
             method = "GET",
-            path = "v1/payment/{payment_id}",
-            handler = handler.VerifyPayment,
+            path = "api/PPM/payment/{payment_id}",
+            handler = Handler.VerifyPayment,
             middlewares = [Middleware.AuthenticateUser],
             responseSchema = { 
                 paymentStatus: STRING,
@@ -32,8 +32,8 @@ FUNCTION SetupServer():
         ),
         ApiRoute(
             method = "POST",
-            path = "v1/payment/refund",
-            handler = handler.RefundPayment,
+            path = "api/PPM/payment/refund",
+            handler = Handler.RefundPayment,
             middlewares = [Middleware.AuthenticateUser],
             requestSchema = {
                 orderId: STRING,

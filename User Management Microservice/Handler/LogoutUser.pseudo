@@ -1,0 +1,29 @@
+FUNCTION Handler.LogoutUser(request, response):
+
+    // Step 1: Extract user context and auth token from request
+    user ← request.ctx["user"]
+    token ← request.headers["Authorization"]
+
+    // Step 2: Validate the token
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing or invalid authorization token")
+
+    // Step 3: Validate the user
+    IF user IS NULL OR user.id IS NULL THEN
+        RETURN response.Error(400, "Missing user information")
+
+    // Step 4: Find the user in the database
+    dbUser ← DB.FindUserById(user.id)
+    IF dbUser IS NULL THEN
+        RETURN response.Error(404, "User not found")
+
+    // Step 5: Invalidate the auth token (logout)
+    success ← Firebase.RemoveToken(user.id, token)
+    IF NOT success THEN
+        RETURN response.Error(500, "Failed to logout user")
+
+    // Step 6: Return success response
+    RETURN response.JSON(200, {
+        message: "Logout successful",
+        userId: user.id
+    })

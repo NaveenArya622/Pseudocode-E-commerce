@@ -1,0 +1,37 @@
+FUNCTION Handler.AddProduct(request, response):
+
+    // Step 1: Extract API ID, user, and product details from the request
+    apiId ← request.ctx["apiId"]
+    user ← request.ctx["user"]
+    product ← request.body["product"]
+
+    // Step 2: Generate a new API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 3: Validate product data
+    IF product IS NULL OR EMPTY THEN
+        LOG_ERROR("Missing product data | apiId: %s", apiId)
+        RETURN response.Error(400, "Missing or invalid product data")
+
+    // Step 4: Set seller ID from authenticated user
+    product.sellerId ← user.id
+
+    // Optional: Check if a product with same title already exists
+    existingProduct ← Helper.GetProductByName(product.name)
+    IF existingProduct IS NOT NULL THEN
+        LOG_WARNING("Product already exists | sellerId: %s | apiId: %s", user.id, apiId)
+        RETURN response.Error(409, "Product already exists")
+
+    // Step 5: Save the product to the database
+    newProductId ← Helper.CreateProduct(product)
+
+    IF newProductId IS NULL THEN
+        LOG_ERROR("Failed to add product | sellerId: %s | apiId: %s", user.id, apiId)
+        RETURN response.Error(500, "Failed to add product")
+
+    // Step 6: Return success response
+    RETURN response.JSON(201, {
+        message: "Product added successfully",
+        productId: newProductId
+    })

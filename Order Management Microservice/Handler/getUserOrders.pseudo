@@ -1,0 +1,27 @@
+FUNCTION Handler.GetUserOrders(request, response):
+
+    // Step 1: Extract user and API ID from request
+    user ← request.ctx.user
+    apiId ← request.ctx["apiId"]
+    userId ← request.urlParams["userId"]
+
+    // Step 2: Validate that the user ID matches the authenticated user
+    IF userId IS NULL OR userId ≠ user.id THEN
+        RETURN response.Error(403, "Unauthorized or invalid user ID")
+
+    // Step 3: Generate API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Fetch all orders for the user
+    orders ← Helper.GetUserOrders(userId)
+
+    IF orders IS NULL OR EMPTY THEN
+        LOG_WARNING("No orders found for | userId: %s | apiId: %s", userId, apiId)
+        RETURN response.Error(404, "No orders found")
+
+    // Step 5: Return the list of orders
+    RETURN response.JSON(200, {
+        message: "User orders fetched successfully",
+        orders: orders
+    })

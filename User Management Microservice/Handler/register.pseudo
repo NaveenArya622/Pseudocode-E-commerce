@@ -1,0 +1,47 @@
+FUNCTION Handler.RegisterUser(request, response):
+
+    // Step 1: Extract registration details from request body
+    name ← request.body["name"]
+    email ← request.body["email"]
+    password ← request.body["password"]
+    gender ← request.body["gender"]
+
+    // Step 2: Validate required fields
+    IF name IS NULL OR EMPTY OR email IS NULL OR EMPTY OR password IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing name, email, or password")
+
+    // Step 3: Check if the user already exists
+    existingUser ← DB.FindUserByEmail(email)
+    IF existingUser IS NOT NULL THEN
+        RETURN response.Error(409, "User with this email already exists")
+
+    // Step 4: Hash the password securely
+    hashedPassword ← Crypto.Hash(password)
+
+    // Step 5: Create new user object
+    newUser ← {
+        id: GenerateUUID(),
+        name: name,
+        email: email,
+        gender: gender,
+        password: hashedPassword,
+        createdAt: Now()
+    }
+
+    // Step 6: Insert user into the database
+    isInserted ← Helper.InsertUser(newUser)
+    IF NOT isInserted THEN
+        LOG_ERROR("User registration failed | email: %s", email)
+        RETURN response.Error(500, "Failed to register user")
+
+    // Step 7: Generate authentication token
+    expiresIn ← 86400  // Token valid for 1 day
+    token ← Firebase.GenerateToken(newUser.id, expiresIn)
+
+    // Step 8: Return successful registration response
+    RETURN response.JSON(201, {
+        message: "User registered successfully",
+        userId: newUser.id,
+        token: token,
+        expiresIn: expiresIn
+    })

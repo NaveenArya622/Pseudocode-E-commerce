@@ -1,0 +1,27 @@
+FUNCTION Handler.GetProductItem(request, response):
+
+    // Step 1: Extract API ID and product ID from the request
+    apiId ← request.ctx["apiId"]
+    productId ← request.urlParams["product_id"]
+
+    // Step 2: Validate product ID
+    IF productId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid product ID")
+
+    // Step 3: Generate a new API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Fetch product by ID
+    product ← Helper.GetProductById(productId)
+
+    // Step 5: Handle case where product is not found
+    IF product IS NULL OR EMPTY THEN
+        LOG_WARNING("No product found | productId: %s | apiId: %s", productId, apiId)
+        RETURN response.Error(404, "No product found")
+
+    // Step 6: Return product details
+    RETURN response.JSON(200, {
+        message: "Product fetched successfully",
+        product: product
+    })

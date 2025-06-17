@@ -1,0 +1,13 @@
+FUNCTION Middleware.CheckUserRole(request, next):
+
+    // Step 1: Extract user from request context
+    user ← request.ctx["user"]
+    apiId ← request.ctx["apiId"]
+
+    // Step 2: Validate user role
+    IF user IS NULL OR user.role ≠ "SELLER" THEN
+        LOG_WARNING("API Forbidden | userID: %s | apiId: %s", user?.id, apiId)
+        RETURN ErrorResponse(403, "Access denied. Only sellers are allowed.")
+
+    // Step 3: Proceed to next middleware or handler
+    CALL next(request)

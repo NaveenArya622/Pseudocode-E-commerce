@@ -1,0 +1,13 @@
+FUNCTION Handler.Profile(request, response):
+
+    // Step 1: Extract user context from the request
+    user ← request.ctx["user"]
+
+    // Step 2: Sanitize sensitive fields
+    user.password ← "********"
+
+    // Step 3: Return success response with user profile
+    RETURN response.JSON(200, {
+        message: "User profile retrieved successfully",
+        userProfile: user
+    })

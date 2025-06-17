@@ -1,0 +1,33 @@
+FUNCTION Middleware.AuthenticateUser(request, next):
+    // Step 1: Extract token and API ID from request
+    token ← request.headers["Authorization"]
+    apiId ← request.headers["apiId"]
+
+    IF token IS NULL THEN
+        printf("Unauthorized: Missing token. apiId: %s", apiId)
+        RETURN ErrorResponse(401, "Unauthorized: Missing token")
+
+    IF apiId IS NULL THEN
+        apiId ← UUID()
+
+    // Step 2: token to get user
+    user ← CallAPI(
+            method = "GET",
+            url = "api/UMM/user/profile",
+            headers = {
+                apiId: apiId,
+                "Authorization": token
+            }
+        )
+    IF user IS NULL THEN
+        printf("User not found. apiId: %s", apiId)
+        RETURN ErrorResponse(404, "User not found")
+
+    // Step 3: Attach context to request
+    request.ctx ← {
+        user: user,
+        apiId: apiId
+    }
+
+    // Step 4: Call next middleware or handler
+    CALL next(request)

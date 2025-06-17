@@ -3,8 +3,8 @@ PROCESS MAIN
 
     // --- STEP 1: Initialize and migrate database ---
     TRY
-        dbPool ← INITIALIZE_DB_POOL(config.db)
-        MIGRATE_DATABASE(
+        dbPool ← InitializeDbPool(config.db)
+        MigrateDatabase(
             pool=dbPool,
             targetVersion=config.db.targetVersion
         )
@@ -14,7 +14,7 @@ PROCESS MAIN
 
     // --- STEP 2: Setup and start the web server ---
     TRY
-        server ← SETUP_SERVER()
+        server ← SetupServer()
         server.RUN()
     CATCH ServerError AS srvErr
         PRINT "ERROR: Server failed to start –", srvErr.message

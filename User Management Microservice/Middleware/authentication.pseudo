@@ -1,0 +1,28 @@
+FUNCTION Middleware.AuthenticateUser(request, next):
+    // Step 1: Extract token from headers
+    token ← request.headers["Authorization"]
+    apiId ← request.headers["apiId"]
+
+    IF token IS NULL THEN
+        RETURN response.Error(401, "Unauthorized: Token missing")
+
+    // Step 2: Verify token
+    userPayload ← VerifyToken(token)
+
+    IF userPayload IS NULL THEN
+        RETURN response.Error(401, "Unauthorized: Invalid token")
+
+    // Step 3: Fetch user from database
+    user ← Database.FindUserByID(userPayload.userId)
+
+    IF user IS NULL THEN
+        RETURN response.Error(404, "User not found")
+
+    // Step 4: Attach context to request
+    request.ctx ← {
+        user: user,
+        apiId: apiId
+    }
+
+    // Step 5: Call next middleware or handler
+    CALL next(request)

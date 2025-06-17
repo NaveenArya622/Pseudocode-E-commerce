@@ -1,0 +1,31 @@
+FUNCTION Handler.LoginUser(request, response):
+
+    // Step 1: Extract login details from request body
+    userId ← request.body["userId"]
+    password ← request.body["password"]
+
+    // Step 2: Validate required fields
+    IF userId IS NULL OR EMPTY OR password IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing userId or password")
+
+    // Step 3: Find user in the database
+    user ← DB.FindUserById(userId)
+    IF user IS NULL THEN
+        RETURN response.Error(404, "User not found")
+
+    // Step 4: Verify password
+    isPasswordValid ← Crypto.Compare(password, user.hashedPassword)
+    IF NOT isPasswordValid THEN
+        RETURN response.Error(401, "Invalid password")
+
+    // Step 5: Generate auth token
+    expiresIn ← 86400 // 1 day
+    token ← Firebase.GenerateToken(user.id, expiresIn)
+
+    // Step 6: Return success response
+    RETURN response.JSON(200, {
+        message: "Login successful",
+        userId: user.id,
+        token: token,
+        expiresIn: expiresIn
+    })

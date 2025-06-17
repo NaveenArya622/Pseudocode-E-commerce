@@ -1,0 +1,40 @@
+FUNCTION Handler.UpdateUserProfile(request, response):
+
+    // Step 1: Extract user context from the request
+    user ← request.ctx["user"]
+    gender ← request.body["gender"]
+    name ← request.body["name"]
+    email ← request.body["email"]
+    password ← request.body["password"]
+
+    // Step 2: Validate required fields
+    IF name IS NULL OR EMPTY OR email IS NULL OR EMPTY OR password IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing name, email, or password")
+
+    // Step 3: Hash the password securely
+    hashedPassword ← Crypto.Hash(password)
+
+    // Step 4: Create updated user object
+    updatedUser ← {
+        id: user.id,
+        name: name,
+        email: email,
+        gender: gender,
+        password: hashedPassword,
+        createdAt: user.createdAt
+    }
+
+    // Step 5: Save updated user to database
+    success ← Helper.UpdateUserProfile(updatedUser)
+    IF NOT success THEN
+        LOG_ERROR("User profile update failed | userId: %s", user.id)
+        RETURN response.Error(500, "Failed to update user profile")
+
+    // Step 6: Remove sensitive field before returning
+    updatedUser.password ← "********"
+
+    // Step 7: Return success response
+    RETURN response.JSON(200, {
+        message: "User profile updated successfully",
+        userProfile: updatedUser
+    })

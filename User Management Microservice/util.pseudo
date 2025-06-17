@@ -1,0 +1,6 @@
+FUNCTION VerifyToken(token):
+    TRY
+        decoded ← JWT.Verify(token, SECRET_KEY)
+        RETURN decoded
+    CATCH error:
+        RETURN NULL

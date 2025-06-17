@@ -1,0 +1,33 @@
+FUNCTION Handler.DeleteItem(request, response):
+
+    // Step 1: Extract user and API ID from request context
+    user ← request.ctx["user"]
+    apiId ← request.ctx["apiId"]
+    token ← request.headers["Authorization"]
+    itemId ← request.urlParams["item_id"]
+
+    // Step 2: Validate authorization token
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing or invalid authorization token")
+
+    // Step 3: Ensure API ID exists
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Validate item ID
+    IF itemId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid item ID")
+
+    // Step 5: Delete the cart item
+    deletedItem ← Helper.DeleteItem(user.id, itemId)
+
+    // Step 6: Handle failure
+    IF deletedItem IS NULL OR EMPTY THEN
+        LOG_WARNING("Cart item not found or failed to delete | userId: %s | itemId: %s | apiId: %s", user.id, itemId, apiId)
+        RETURN response.Error(404, "Cart item not found or delete failed")
+
+    // Step 7: Return deletion confirmation
+    RETURN response.JSON(200, {
+        message: "Cart item deleted successfully",
+        item: deletedItem
+    })

@@ -1,0 +1,42 @@
+FUNCTION Handler.UpdateProduct(request, response):
+
+    // Step 1: Extract required data from request
+    user ← request.ctx.user
+    apiId ← request.ctx["apiId"]
+    productId ← request.urlParams["product_id"]
+    productDetails ← request.body["productDetails"]
+
+    // Step 2: Validate product ID
+    IF productId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid product ID")
+
+    // Step 3: Ensure API ID exists
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Fetch product and check ownership
+    product ← Helper.GetProductById(productId)
+    IF product IS NULL OR EMPTY THEN
+        RETURN response.Error(404, "Product not found")
+
+    IF product.sellerId ≠ user.id THEN
+        LOG_WARNING("Unauthorized update attempt | userId: %s | sellerId: %s", user.id, product.sellerId)
+        RETURN response.Error(403, "Unauthorized to update this product")
+
+    // Step 5: Validate product details
+    IF productDetails IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing product update details")
+
+    // Step 6: Perform product update
+    updatedProduct ← Helper.UpdateProduct(productId, productDetails)
+
+    // Step 7: Handle update failure
+    IF updatedProduct IS NULL THEN
+        LOG_WARNING("Product update failed | productId: %s | userId: %s", productId, user.id)
+        RETURN response.Error(500, "Product update failed")
+
+    // Step 8: Return success response
+    RETURN response.JSON(200, {
+        message: "Product updated successfully",
+        product: updatedProduct
+    })

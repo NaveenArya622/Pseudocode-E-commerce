@@ -1,0 +1,28 @@
+FUNCTION Handler.GetOrderDetails(request, response):
+
+    // Step 1: Extract user, API ID, and order ID from request
+    user ← request.ctx.user
+    apiId ← request.ctx["apiId"]
+    orderId ← request.urlParams["orderId"]
+
+    // Validate presence of order ID
+    IF orderId IS NULL OR EMPTY THEN
+        LOG_ERROR("Missing or invalid order ID | orderId: %s | apiId: %s", orderId, apiId)
+        RETURN response.Error(400, "Missing or invalid order ID")
+
+    // Generate new API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 2: Fetch order details from the database
+    orderDetails ← Helper.GetOrderDetails(orderId)
+
+    IF orderDetails IS NULL THEN
+        LOG_ERROR("Order not found | orderId: %s | apiId: %s", orderId, apiId)
+        RETURN response.Error(404, "Order not found")
+
+    // Step 3: Return response with order details
+    RETURN response.JSON(200, {
+        message: "Order details fetched successfully",
+        orderDetails: orderDetails
+    })

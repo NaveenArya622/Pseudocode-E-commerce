@@ -7,18 +7,18 @@ FUNCTION SetupServer():
     routes ← [
         ApiRoute(
             method = "GET",
-            path = "v1/product",
+            path = "api/PCM/product",
             handler = handler.GetProducts,
-            middlewares = [Middleware.AuthenticateUser],
+            middlewares = [],
             responseSchema = {
                 products: PRODUCT[]
             }
         ),
         ApiRoute(
             method = "GET",
-            path = "v1/product/{product_id}",
+            path = "api/PCM/product/{product_id}",
             handler = handler.GetProductItem,
-            middlewares = [Middleware.AuthenticateUser],
+            middlewares = [],
             responseSchema = { 
                 productId: STRING,
                 product: PRODUCT
@@ -26,9 +26,9 @@ FUNCTION SetupServer():
         ),
         ApiRoute(
             method = "POST",
-            path = "v1/product",
+            path = "api/PCM/product",
             handler = handler.AddProduct,
-            middlewares = [Middleware.AuthenticateUser],
+            middlewares = [Middleware.AuthenticateUser,Middleware.CheckUserRole],
             requestSchema = {
                 product: PRODUCT,
             },
@@ -39,9 +39,9 @@ FUNCTION SetupServer():
         ),
         ApiRoute(
             method = "PUT",
-            path = "v1/product/{product_id}",
+            path = "api/PCM/product/{product_id}",
             handler = handler.UpdateProduct,
-            middlewares = [Middleware.AuthenticateUser],
+            middlewares = [Middleware.AuthenticateUser,Middleware.CheckUserRole],
             requestSchema = {
                 product: PRODUCT,
             },
@@ -52,9 +52,9 @@ FUNCTION SetupServer():
         ),
         ApiRoute(
             method = "DELETE",
-            path = "v1/product/{product_id}",
+            path = "api/PCM/product/{product_id}",
             handler = handler.DeleteProduct,
-            middlewares = [Middleware.AuthenticateUser],
+            middlewares = [Middleware.AuthenticateUser, Middleware.CheckUserRole],
             responseSchema = {
                 productId: STRING,
                 message: STRING
@@ -62,9 +62,9 @@ FUNCTION SetupServer():
         ),
         ApiRoute(
             method = "GET",
-            path = "v1/product/search?q={query}",
+            path = "api/PCM/product/search?q={query}",
             handler = handler.GetFilteredProducts,
-            middlewares = [Middleware.AuthenticateUser],
+            middlewares = [],
             responseSchema = {
                 products: PRODUCT[]
             }

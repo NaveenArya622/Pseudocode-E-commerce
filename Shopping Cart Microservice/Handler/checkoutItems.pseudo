@@ -1,0 +1,49 @@
+FUNCTION Handler.CheckoutItems(request, response):
+
+    // Step 1: Extract user, API ID, token, and item IDs from request
+    user ← request.ctx["user"]
+    apiId ← request.ctx["apiId"]
+    token ← request.headers["Authorization"]
+    itemIds ← request.body["itemIds"]
+
+    // Step 2: Validate authorization token
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing or invalid authorization token")
+
+    // Step 3: Ensure API ID exists
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Validate item IDs
+    IF itemIds IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid item IDs")
+
+    // Step 5: Checkout the cart items
+    checkedOutItems ← Helper.CheckoutItems(user.id, itemIds)
+
+    // Step 6: Enrich each item with product info
+    enrichedItems ← []
+    FOR item IN checkedOutItems:
+        productInfo ← CallAPI(
+            method = "GET",
+            url = "api/PCM/product/{item.id}",
+            headers = {
+                "apiId": apiId,
+                "Authorization": token
+            }
+        )
+
+        IF productInfo IS NOT NULL THEN
+            item.productInfo ← productInfo
+            ADD item TO enrichedItems
+
+    // Step 7: Handle failure or empty checkout
+    IF enrichedItems IS NULL OR EMPTY THEN
+        LOG_WARNING("Checkout failed | userId: %s | itemIds: %s | apiId: %s", user.id, itemIds, apiId)
+        RETURN response.Error(404, "Checkout failed or no product info available")
+
+    // Step 8: Return success response
+    RETURN response.JSON(200, {
+        message: "Cart items checked out successfully",
+        items: enrichedItems
+    })

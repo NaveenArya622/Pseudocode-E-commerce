@@ -1,0 +1,27 @@
+FUNCTION Handler.DeleteProduct(request, response):
+
+    // Step 1: Extract API ID and product ID from request
+    apiId ← request.ctx["apiId"]
+    productId ← request.urlParams["product_id"]
+
+    // Step 2: Validate product ID
+    IF productId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid product ID")
+
+    // Step 3: Generate API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Attempt to delete product
+    message, error ← Helper.DeleteProduct(productId)
+
+    // Step 5: Handle error case from helper
+    IF error IS NOT NULL AND NOT EMPTY THEN
+        LOG_WARNING("Delete failed | reason: %s | productId: %s | apiId: %s", error, productId, apiId)
+        RETURN response.Error(404, error)
+
+    // Step 6: Return success response
+    RETURN response.JSON(200, {
+        message: message,
+        productId: productId
+    })

@@ -1,0 +1,43 @@
+FUNCTION Handler.CartInformation(request, response):
+
+    // Step 1: Extract user and API ID from request context
+    user ← request.ctx["user"]
+    apiId ← request.ctx["apiId"]
+    token ← request.headers["Authorization"]
+
+    // Step 2: Validate token
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing or invalid authorization token")
+
+    // Step 3: Generate a new API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Fetch cart items for the user
+    cartItems ← Helper.getCartItems(user.id)
+
+    IF cartItems IS NULL OR EMPTY THEN
+        LOG_WARNING("No cart items found | userId: %s | apiId: %s", user.id, apiId)
+        RETURN response.Error(404, "No cart items found")
+
+    // Step 5: Enrich each item with product info from external service
+    enrichedItems ← []
+    FOR item IN cartItems:
+        productInfo ← CallAPI(
+            method = "GET",
+            url = "api/PCM/product/{item.id}",
+            headers = {
+                "apiId": apiId,
+                "Authorization": token
+            }
+        )
+
+        IF productInfo IS NOT NULL:
+            item.productInfo ← productInfo
+            ADD item TO enrichedItems
+
+    // Step 6: Final response
+    RETURN response.JSON(200, {
+        message: "Cart information retrieved successfully",
+        items: enrichedItems
+    })

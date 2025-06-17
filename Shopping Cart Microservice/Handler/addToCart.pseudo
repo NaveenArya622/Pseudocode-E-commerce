@@ -1,0 +1,44 @@
+FUNCTION Handler.AddToCart(request, response):
+
+    // Step 1: Extract user, API ID, token, and item ID from request
+    user ← request.ctx["user"]
+    apiId ← request.ctx["apiId"]
+    token ← request.headers["Authorization"]
+    itemId ← request.urlParams["item_id"]
+
+    // Step 2: Validate authorization token
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing or invalid authorization token")
+
+    // Step 3: Generate a new API ID if not present
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Fetch product info from PCM service
+    productInfo ← CallAPI(
+        method = "GET",
+        url = FORMAT("api/PCM/product/%s", itemId),
+        headers = {
+            "apiId": apiId,
+            "Authorization": token
+        }
+    )
+
+    // Step 5: Validate product info
+    IF productInfo IS NULL OR EMPTY THEN
+        LOG_WARNING("Product not found | itemId: %s | userId: %s | apiId: %s", itemId, user.id, apiId)
+        RETURN response.Error(404, "Product not found")
+
+    // Step 6: Add product to user's cart
+    cartItem ← Helper.AddToCart(user.id, itemId, productInfo)
+
+    // Step 7: Handle failure in adding item
+    IF cartItem IS NULL THEN
+        LOG_WARNING("Failed to add item to cart | itemId: %s | userId: %s | apiId: %s", itemId, user.id, apiId)
+        RETURN response.Error(500, "Failed to add item to cart")
+
+    // Step 8: Return success response
+    RETURN response.JSON(200, {
+        message: "Item added to cart successfully",
+        item: cartItem
+    })

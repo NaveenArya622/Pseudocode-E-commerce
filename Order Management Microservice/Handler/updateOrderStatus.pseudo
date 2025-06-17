@@ -1,0 +1,40 @@
+FUNCTION Handler.GetUserOrders(request, response):
+
+    // Step 1: Extract required data from request
+    user           ← request.ctx.user
+    apiId          ← request.ctx["apiId"]
+    orderId        ← request.urlParams["orderId"]
+    orderStatus    ← request.body["orderStatus"]
+    paymentDetails ← request.body["paymentDetails"]  // Corrected from duplicate orderStatus
+
+    // Step 2: Validate order ID
+    IF orderId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid order ID")
+
+    // Step 3: Ensure API ID exists
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Conditionally update order using paymentDetails (if provided)
+    IF paymentDetails IS NOT NULL AND NOT EMPTY THEN
+        result ← Helper.UpdateOrderWithPayment(orderId, paymentDetails)
+        IF result IS NULL THEN
+            LOG_WARNING("Failed to update payment details | orderId: %s", orderId)
+            RETURN response.Error(500, "Failed to update payment details")
+
+    // Step 5: Update order status (if provided)
+    IF orderStatus IS NOT NULL AND NOT EMPTY THEN
+        orderDetails ← Helper.UpdateOrderStatus(orderId, orderStatus)
+    ELSE
+        orderDetails ← Helper.GetOrderById(orderId)
+
+    // Step 6: Handle missing or failed fetch
+    IF orderDetails IS NULL THEN
+        LOG_WARNING("Order not found or status update failed | orderId: %s | userId: %s", orderId, user.id)
+        RETURN response.Error(404, "Order not found or update failed")
+
+    // Step 7: Return final response
+    RETURN response.JSON(200, {
+        message: "Order fetched successfully",
+        orderDetails: orderDetails
+    })

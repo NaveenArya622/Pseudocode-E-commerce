@@ -1,0 +1,48 @@
+FUNCTION Handler.GetItem(request, response):
+
+    // Step 1: Extract user and API ID from request context
+    user ← request.ctx["user"]
+    apiId ← request.ctx["apiId"]
+    token ← request.headers["Authorization"]
+    itemId ← request.urlParams["item_id"]
+
+    // Step 2: Validate authorization token
+    IF token IS NULL OR EMPTY THEN
+        RETURN response.Error(401, "Missing or invalid authorization token")
+
+    // Step 3: Ensure API ID exists
+    IF apiId IS NULL OR EMPTY THEN
+        apiId ← GenerateUUID()
+
+    // Step 4: Validate item ID
+    IF itemId IS NULL OR EMPTY THEN
+        RETURN response.Error(400, "Missing or invalid item ID")
+
+    // Step 5: Fetch the cart item
+    cartItem ← Helper.getCartItemById(user.id, itemId)
+
+    IF cartItem IS NULL OR EMPTY THEN
+        LOG_WARNING("Cart item not found | userId: %s | itemId: %s | apiId: %s", user.id, itemId, apiId)
+        RETURN response.Error(404, "Cart item not found")
+
+    // Step 6: Enrich cart item with product information
+    productInfo ← CallAPI(
+        method = "GET",
+        url = "api/PCM/product/{item.id}",
+        headers = {
+            "apiId": apiId,
+            "Authorization": token
+        }
+    )
+
+    IF productInfo IS NULL OR EMPTY THEN
+        LOG_WARNING("Failed to fetch product info | userId: %s | itemId: %s | apiId: %s", user.id, itemId, apiId)
+        RETURN response.Error(404, "Product information not found")
+
+    cartItem.productInfo ← productInfo
+
+    // Step 7: Return the enriched item in the response
+    RETURN response.JSON(200, {
+        message: "Cart item retrieved successfully",
+        item: cartItem
+    })
